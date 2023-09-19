@@ -1,0 +1,33 @@
+import csv
+from mido import MidiFile
+
+def write_to_csv(data, filename):
+    with open(filename, 'w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        csv_writer.writerow(["Timing (ms)"])  # header row
+        for time in data:
+            csv_writer.writerow([time])
+
+def main():
+    mid = MidiFile('RhythmicMIDIUser1.mid')
+
+    tempo = 779.22  # default (500,000 microseconds per beat)
+    ticks_per_beat = mid.ticks_per_beat
+    csv_data = []
+
+    for i, track in enumerate(mid.tracks):
+        current_time = 0  # reset for each track
+        for msg in track:
+            current_time += msg.time  # time is in ticks
+            if msg.type == 'set_tempo':
+                tempo = msg.tempo
+            elif msg.type == 'note_on':
+                # Convert tick time to real time (milliseconds)
+                ms_per_tick = tempo / (ticks_per_beat * 1000)
+                real_time_ms = current_time * ms_per_tick
+                csv_data.append(real_time_ms)
+
+    write_to_csv(csv_data, 'hit_timingsUser1.csv')
+
+if __name__ == "__main__":
+    main()
